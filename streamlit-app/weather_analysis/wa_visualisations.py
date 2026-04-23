@@ -6,8 +6,13 @@ import plotly.express as px
 # -----------------------------
    
 def rain_vs_no_rain_echarts(df):
-    rain_count = int(df["is_raining"].sum())          
-    no_rain_count = int((~df["is_raining"]).sum())    
+    rain = df["is_raining"]
+
+    rain = rain.astype(bool).tolist()
+
+    rain_count = sum(rain)
+    no_rain_count = len(rain) - rain_count 
+    
     option_rain = {
         "title": {"text": "Trips Demand by Rainfall", "left": "center"},
         "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"},

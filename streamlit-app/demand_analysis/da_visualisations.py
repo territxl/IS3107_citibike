@@ -83,8 +83,15 @@ def h3_demand_heatmap(
     # -----------------------------
     # H3 SELECTION
     # -----------------------------
-    origin_col = "origin_h3_r9" if h3_resolution == "r9" else "origin_h3_r8"
-    dest_col = "dest_h3_r9" if h3_resolution == "r9" else "dest_h3_r8"
+    if h3_resolution == "r9":
+        origin_col = "origin_h3_r9"
+        dest_col = "dest_h3_r9"
+    elif h3_resolution == "r8":
+        origin_col = "origin_h3_r8"
+        dest_col = "dest_h3_r8"
+    else:
+        origin_col = "origin_h3_r7"
+        dest_col = "dest_h3_r7"
 
     # -----------------------------
     # AGGREGATION
@@ -207,6 +214,9 @@ def demand_by_hour_echarts(df):
             "nameLocation": "end",   
             "nameRotate": 0,         
             "nameGap": 15,
+            "axisLabel": {
+                "fontSize": 8
+            }
         },
         "series": [{
             "name": "Trips",
@@ -253,6 +263,9 @@ def demand_hour_split_echarts(df):
             "nameLocation": "end",   
             "nameRotate": 0,         
             "nameGap": 15,
+            "axisLabel": {
+                "fontSize": 8
+            }
         },
         "series": [
             {

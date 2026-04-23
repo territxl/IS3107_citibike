@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 from streamlit_echarts import st_echarts
-from bigquery_services import load_stations, top_ori_demand_by_h3, top_dest_demand_by_h3
+from bigquery_services import load_stations, top_ori_demand_by_h3, top_dest_demand_by_h3, obtain_feature_store
 from trip_duration_predictor.feature_builder import build_feature_row
 from trip_duration_predictor.predict_trip import predict_trip_duration
 from trip_duration_predictor.weather_features import build_weather_features
@@ -116,7 +116,7 @@ with tab2:
         # Date Range (Month and Year)
         st.subheader("📅 Date")
         months_list = list("January February March April May June July August September October November December".split())
-        month = st.selectbox("Month", months_list, index=datetime.today().month - 1)
+        month = st.selectbox("Month", months_list, index=datetime.today().month - 2)
         year = st.selectbox("Year", [2025, 2026], index=1)
         time_input_hm = st.selectbox(
             "Time Filter",
@@ -147,8 +147,10 @@ with tab2:
 
     # Load feature store data
     month_num = months_list.index(month) + 1
-    # df = pd.read_csv(f"output/feature_store/features_{year}-{month_num:02d}.csv") # Replace with output/feature_store/features_YYYY-MM.csv
-    df = pd.read_csv("./output/samples/feature_store/features_sample.csv") # Temp
+    month_to_num = {name: num for num, name in enumerate(months_list, start=1)}
+    
+    df = obtain_feature_store(year, month_to_num[month])  # Load from BigQuery instead of local CSV
+    df = df.copy()
 
     # Placing legend directly below the heatmap (Bottom Right)
     heatmap = h3_demand_heatmap(df, view_mode, h3_resolution, time_input_hm, is_ebike_hm, is_member_hm)
@@ -209,28 +211,40 @@ with tab2:
 
 with tab3:
     st.header("🌦️ Weather Analysis - Impact on Demand")
-    
+
+    # Visualisation: Rain vs No Rain
+    st.subheader("🌧️ Rain vs No Rain")
+
+    option_rain = rain_vs_no_rain_echarts(df)
+
+    option_rain["renderer"] = "canvas"
+
+    st.markdown("<div style='width:100%'>", unsafe_allow_html=True)
+
+    st_echarts(
+        option_rain,
+        height="400px",
+        key="rain_pie_fixed"
+    )
+
+    st.markdown("</div>", unsafe_allow_html=True)
     col1, col2 = st.columns(2)
     with col1:
-        # Visualisation: Rain vs No Rain
-        st.subheader("🌧️ Rain vs No Rain") 
-        st_echarts(rain_vs_no_rain_echarts(df), height="400px")
-    with col2:
         # Visualisation: Temperatre vs Demand
         st.subheader("🌡️ Temperature")
         temp_vs_demand_echarts(df)
-
-    col3, col4 = st.columns(2)
-    with col3:
+    with col2:
         # Visualisation: Wind Speed Impact
         st.subheader("💨 Wind Speed")
         wind_impact_echarts(df)
-    with col4:
+
+    col3, col4 = st.columns(2)
+    with col3:
         # Visualisation: Snowfall Impact
         st.subheader("❄️ Snowfall")
         snow_impact_echarts(df)  
-
-    # Visualisation: Rain Recency Effect
-    st.subheader("⏱️ Rain Recency Effect")
-    rain_recency_echarts(df)
+    with col4:
+        # Visualisation: Rain Recency Effect
+        st.subheader("⏱️ Rain Recency Effect")
+        rain_recency_echarts(df)
 
