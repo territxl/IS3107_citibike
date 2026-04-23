@@ -32,3 +32,6 @@ output/feature_store/
 # Streamlit Files
 !streamlit-app/
 !streamlit-app/**
+# except pycache
+streamlit-app/**/__pycache__/
+streamlit-app/**/*.pyc
