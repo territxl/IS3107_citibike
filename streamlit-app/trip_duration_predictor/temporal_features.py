@@ -1,7 +1,6 @@
 import holidays
 
 def build_time_features(selected_time):
-
     us_holidays = holidays.US()
 
     hour = selected_time.hour

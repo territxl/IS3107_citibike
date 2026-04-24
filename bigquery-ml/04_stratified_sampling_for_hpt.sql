@@ -3,7 +3,7 @@
 -- ================================================================
 -- Stratified on: month x is_weekend x hour_bucket x is_ebike x is_member
 -- hour bucketed into 4 periods to keep strata manageable:
--- Each stratum sampled at 20% 
+-- Each stratum sampled at 10% 
 -- Deterministic via FARM_FINGERPRINT(ride_id)
 
 CREATE OR REPLACE VIEW `is3107-491906.ml_datasets.trips_train_input_sampled_4` AS

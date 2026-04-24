@@ -32,9 +32,9 @@ def render_map(start_lat, start_lon, end_lat, end_lon, start_station, end_statio
         "PathLayer",
         data=line_df,
         get_path="path",
-        get_width=8,
+        get_width=20,
         get_color='[0, 150, 255]',
-        opacity=0.8,
+        opacity=0.9,
     )
 
     text_layer = pdk.Layer(

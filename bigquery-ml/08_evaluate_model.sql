@@ -13,14 +13,9 @@ FROM ML.EVALUATE(
 -- Metrics in original duration scale
 CREATE OR REPLACE VIEW `is3107-491906.ml_datasets.trip_eval_original_scale_4` AS
 SELECT
-  SQRT(AVG(POW(predicted_log_duration - log_duration, 2))) AS rmse_log,
-  AVG(ABS(predicted_log_duration - log_duration)) AS mae_log,
-  AVG(
-    ABS(EXP(predicted_log_duration) - EXP(log_duration))
-    / EXP(log_duration)
-  ) * 100 AS mape_pct,
-  1 - VARIANCE(predicted_log_duration - log_duration)
-      / VARIANCE(log_duration) AS r_squared
+  SQRT(AVG(POW(EXP(predicted_log_duration) - EXP(log_duration), 2))) AS rmse_seconds,
+  AVG(ABS(EXP(predicted_log_duration) - EXP(log_duration))) AS mae_seconds,
+  AVG(ABS(EXP(predicted_log_duration) - EXP(log_duration)) / EXP(log_duration)) * 100 AS mape_pct
 FROM ML.PREDICT(
   MODEL `is3107-491906.ml_datasets.xgb_trip_duration_final_4`,
   (SELECT * FROM `is3107-491906.ml_datasets.trips_test_input_4`)

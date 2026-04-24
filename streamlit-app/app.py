@@ -7,7 +7,7 @@ from trip_duration_predictor.feature_builder import build_feature_row
 from trip_duration_predictor.predict_trip import predict_trip_duration
 from trip_duration_predictor.weather_features import build_weather_features
 from trip_duration_predictor.dist_features import build_distance_features
-from ui_components.map_view import render_map
+from trip_duration_predictor.map_view import render_map
 from demand_analysis.da_visualisations import h3_demand_heatmap, render_demand_heatmap_legend, demand_by_hour_echarts, demand_hour_split_echarts, plot_h3_demand_map
 from weather_analysis.wa_visualisations import rain_recency_echarts, rain_vs_no_rain_echarts, snow_impact_echarts, temp_vs_demand_echarts, wind_impact_echarts, snow_impact_echarts, rain_recency_echarts
 
@@ -19,7 +19,7 @@ def mark_interacted_start_end_stations():
 
 st.title("🚲 CitiBike Dashboard")
 
-tab1, tab2, tab3 = st.tabs(["⏱️Citibike Trip Duration Predictor", "🗺️Demand Analysis", "🌦️Weather Analysis"]) 
+tab1, tab2, tab3 = st.tabs(["⏱️Trip Duration Predictor", "🗺️Demand Analysis", "🌦️Weather Analysis"]) 
 
 
 with tab1:
