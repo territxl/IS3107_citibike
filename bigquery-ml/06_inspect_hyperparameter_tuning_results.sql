@@ -11,5 +11,4 @@ SELECT
   hyperparameters.l2_reg,
   hparam_tuning_evaluation_metrics.mean_absolute_error AS mae
 FROM ML.TRIAL_INFO(MODEL `is3107-491906.ml_datasets.xgb_trip_duration_hpt_4`)
-ORDER BY mae ASC
-LIMIT 5;
+ORDER BY mae ASC;

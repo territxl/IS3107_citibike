@@ -1,5 +1,5 @@
 -- ================================================================
--- 7) FINAL MODEL ON FULL 50M ROWS
+-- 7) FINAL MODEL
 -- ================================================================
 
 CREATE OR REPLACE MODEL `is3107-491906.ml_datasets.xgb_trip_duration_final_4`
