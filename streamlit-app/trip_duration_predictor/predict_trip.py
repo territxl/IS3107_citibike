@@ -1,7 +1,7 @@
 from google.cloud import bigquery
 import numpy as np
 
-client = bigquery.Client()
+client = bigquery.Client(project="is3107-491906")
 
 def predict_trip_duration(features: dict):
     query = """

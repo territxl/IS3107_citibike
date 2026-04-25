@@ -1,7 +1,7 @@
 import streamlit as st
 from google.cloud import bigquery
 
-client = bigquery.Client()
+client = bigquery.Client(project="is3107-491906")
 
 @st.cache_data
 def load_stations():
