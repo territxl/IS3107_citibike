@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 from streamlit_echarts import st_echarts
-from bigquery_services import get_h3_heatmap_data, load_stations, obtain_demand_by_hour_echarts, top_ori_demand_by_h3, top_dest_demand_by_h3, obtain_feature_store
+from bigquery_services import get_h3_heatmap_data, load_stations, obtain_demand_by_hour_echarts, obtain_feature_store
 from trip_duration_predictor.feature_builder import build_feature_row
 from trip_duration_predictor.predict_trip import predict_trip_duration
 from trip_duration_predictor.map_view import render_map
@@ -206,14 +206,14 @@ with tab2:
     with col2:
         st_echarts(option_dhs, height="400px")
     
-    # Visualisation - Top H3 Regions by Demand (Origin)
+    # Visualisation - Top H3 Regions by Demand (Origin & Destination)
+    # ** reuses the df used from the heatmap
     st.header("🚴 Top Trip Origins/Destinations (Fine-Grained)")
-    top_ori_demand_by_h3_df = top_ori_demand_by_h3(year, month_to_num[month])
-    st.plotly_chart(plot_h3_demand_map(top_ori_demand_by_h3_df, is_origin=True, is_member_filter=is_member_hm, is_ebike_filter=is_ebike_hm, h3_resolution=h3_resolution), use_container_width=True)
+    ori_df = h3_demand_heatmap_df[["h3_cell", "origin_count"]].rename(columns={"origin_count": "trip_count"})
+    st.plotly_chart(plot_h3_demand_map(ori_df, is_origin=True), use_container_width=True)
 
-    # Visualisation - Top H3 Regions by Demand (Destination)
-    top_dest_demand_by_h3_df = top_dest_demand_by_h3(year, month_to_num[month])
-    st.plotly_chart(plot_h3_demand_map(top_dest_demand_by_h3_df, is_origin=False, is_member_filter=is_member_hm, is_ebike_filter=is_ebike_hm, h3_resolution=h3_resolution), use_container_width=True)
+    dest_df = h3_demand_heatmap_df[["h3_cell", "dest_count"]].rename(columns={"dest_count": "trip_count"})
+    st.plotly_chart(plot_h3_demand_map(dest_df, is_origin=False), use_container_width=True)
 
 with tab3:
     # ROW 1: Filters

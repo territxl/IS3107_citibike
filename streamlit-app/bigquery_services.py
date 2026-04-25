@@ -29,49 +29,6 @@ def load_stations():
     """
     return client.query(query).to_dataframe()
 
-@st.cache_data
-def top_ori_demand_by_h3(year, month):
-    query = f"""
-    SELECT
-      origin_h3_r9,
-      origin_h3_r8,
-      origin_h3_r7,
-      is_member,
-      is_ebike,
-      is_weekend,
-      is_rush_hour,
-      hour,
-      COUNT(*) AS trip_count
-    FROM `is3107-491906.citibike.features`
-    WHERE 
-        EXTRACT(YEAR FROM started_at) = {year}
-        AND month = {month}
-    GROUP BY origin_h3_r9, origin_h3_r8, origin_h3_r7, is_member, is_ebike, is_weekend, is_rush_hour, hour
-    LIMIT 100000
-    """
-    return client.query(query).to_dataframe()
-
-@st.cache_data
-def top_dest_demand_by_h3(year, month):
-    query = f"""
-    SELECT
-      dest_h3_r9,
-      dest_h3_r8,
-      dest_h3_r7,
-      is_member,
-      is_ebike,
-      is_weekend,
-      is_rush_hour,
-      hour,
-      COUNT(*) AS trip_count
-    FROM `is3107-491906.citibike.features`
-    WHERE 
-        EXTRACT(YEAR FROM started_at) = {year}
-        AND month = {month}
-    GROUP BY dest_h3_r9, dest_h3_r8, dest_h3_r7, is_member, is_ebike, is_weekend, is_rush_hour, hour
-    LIMIT 100000
-    """
-    return client.query(query).to_dataframe()
 
 @st.cache_data
 def obtain_feature_store(year, month):
@@ -109,8 +66,6 @@ def get_h3_heatmap_data(year, month, time_filter, is_member_filter=False, is_ebi
     predicates = [
         f"started_at >= '{start_date}'",
         f"started_at < '{end_date}'",
-        f"is_member = {str(is_member_filter).upper()}",
-        f"is_ebike = {str(is_ebike_filter).upper()}"
     ]
     if time_filter == "Weekday":
         predicates.append("is_weekend = FALSE")
@@ -122,6 +77,10 @@ def get_h3_heatmap_data(year, month, time_filter, is_member_filter=False, is_ebi
         predicates.append("hour BETWEEN 6 AND 11")
     elif time_filter == "Evening":
         predicates.append("hour BETWEEN 16 AND 20")
+    if is_member_filter:
+        predicates.append("is_member = TRUE")
+    if is_ebike_filter:
+        predicates.append("is_ebike = TRUE")
 
     query = f"""
     select h3_cell, sum(origin_count) as origin_count, sum(dest_count) as dest_count

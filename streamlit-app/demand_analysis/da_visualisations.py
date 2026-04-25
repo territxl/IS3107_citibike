@@ -49,9 +49,9 @@ def h3_demand_heatmap(
     df: pd.DataFrame,
     view_mode: str = "Origin Demand",
     h3_resolution: str = "r8",
-    time_filter: str = "All",
-    is_ebike_filter: bool = False,
-    is_member_filter: bool = False,
+    # time_filter: str = "All",
+    # is_ebike_filter: bool = False,
+    # is_member_filter: bool = False,
     center_lat: float = 40.75,
     center_lon: float = -73.98,
     zoom: int = 11
@@ -62,60 +62,66 @@ def h3_demand_heatmap(
     # -----------------------------
     # FILTER
     # -----------------------------
-    if time_filter == "Weekday":
-        data = data[data["is_weekend"] == False]
-    elif time_filter == "Weekend":
-        data = data[data["is_weekend"] == True]
-    elif time_filter == "Rush Hour":
-        data = data[data["is_rush_hour"] == True]
-    elif time_filter == "Morning":
-        data = data[data["hour"].between(6, 11)]
-    elif time_filter == "Evening":
-        data = data[data["hour"].between(16, 20)]
+    # if time_filter == "Weekday":
+    #     data = data[data["is_weekend"] == False]
+    # elif time_filter == "Weekend":
+    #     data = data[data["is_weekend"] == True]
+    # elif time_filter == "Rush Hour":
+    #     data = data[data["is_rush_hour"] == True]
+    # elif time_filter == "Morning":
+    #     data = data[data["hour"].between(6, 11)]
+    # elif time_filter == "Evening":
+    #     data = data[data["hour"].between(16, 20)]
 
-    if is_member_filter:
-        data = data[data["is_member"] == True]
-    if is_ebike_filter:
-        data = data[data["is_ebike"] == True]
+    # if is_member_filter:
+    #     data = data[data["is_member"] == True]
+    # if is_ebike_filter:
+    #     data = data[data["is_ebike"] == True]
 
     # -----------------------------
     # H3 SELECTION
     # -----------------------------
-    if h3_resolution == "r9":
-        origin_col = "origin_h3_r9"
-        dest_col = "dest_h3_r9"
-    elif h3_resolution == "r8":
-        origin_col = "origin_h3_r8"
-        dest_col = "dest_h3_r8"
-    else:
-        origin_col = "origin_h3_r7"
-        dest_col = "dest_h3_r7"
+    # if h3_resolution == "r9":
+    #     origin_col = "origin_h3_r9"
+    #     dest_col = "dest_h3_r9"
+    # elif h3_resolution == "r8":
+    #     origin_col = "origin_h3_r8"
+    #     dest_col = "dest_h3_r8"
+    # else:
+    #     origin_col = "origin_h3_r7"
+    #     dest_col = "dest_h3_r7"
 
     # -----------------------------
     # AGGREGATION
     # -----------------------------
+    # Set display column as "count"; use origin_count or dest_count based on the selected view_mode
     if view_mode == "Origin Demand":
-        agg = data.groupby(origin_col).size().reset_index(name="count")
-        agg = agg.rename(columns={origin_col: "hex"})
+        # agg = data.groupby(origin_col).size().reset_index(name="count")
+        # agg = agg.rename(columns={origin_col: "hex"})
+        agg = df[["h3_cell", "origin_count"]].rename(columns={"origin_count": "count"})
 
     elif view_mode == "Destination Demand":
-        agg = data.groupby(dest_col).size().reset_index(name="count")
-        agg = agg.rename(columns={dest_col: "hex"})
+        # agg = data.groupby(dest_col).size().reset_index(name="count")
+        # agg = agg.rename(columns={dest_col: "hex"})
+        agg = df[["h3_cell", "dest_count"]].rename(columns={"dest_count": "count"})
 
-    else:
-        origin = data.groupby(origin_col).size().reset_index(name="outflow")
-        dest = data.groupby(dest_col).size().reset_index(name="inflow")
+    else: # net flow
+        # origin = data.groupby(origin_col).size().reset_index(name="outflow")
+        # dest = data.groupby(dest_col).size().reset_index(name="inflow")
 
-        agg = pd.merge(
-            origin,
-            dest,
-            left_on=origin_col,
-            right_on=dest_col,
-            how="outer"
-        ).fillna(0)
+        # agg = pd.merge(
+        #     origin,
+        #     dest,
+        #     left_on=origin_col,
+        #     right_on=dest_col,
+        #     how="outer"
+        # ).fillna(0)
 
-        agg["hex"] = agg[origin_col].fillna(agg[dest_col])
-        agg["count"] = agg["inflow"] - agg["outflow"]
+        # agg["hex"] = agg[origin_col].fillna(agg[dest_col])
+        # agg["count"] = agg["inflow"] - agg["outflow"]
+        agg = df[["h3_cell"]].copy()
+        agg["count"] = df["dest_count"] - df["origin_count"]
+
 
     # -----------------------------
     # NORMALISATION
@@ -155,7 +161,7 @@ def h3_demand_heatmap(
     h3_layer = pdk.Layer(
         "H3HexagonLayer",
         data=agg,
-        get_hexagon="hex",
+        get_hexagon="h3_cell",
         get_fill_color="color",
         get_elevation="elevation * 500",
         elevation_scale=50,
@@ -184,13 +190,19 @@ def h3_demand_heatmap(
 
     return deck
 
-def demand_by_hour_echarts(df):
+def demand_by_hour_echarts(df, is_member_filter: bool = False, is_ebike_filter: bool = False):
+    if is_member_filter:
+        df = df[df["is_member"] == True]
+    if is_ebike_filter:
+        df = df[df["is_ebike"] == True]
+    # time filter not applied since this always shows all hours
     hourly = (
         df.groupby("hour")
         # sum up the (num_trips) column for each hour to get total trips per hour
         .agg(trip_count=("num_trips", "sum"))
         .reset_index() 
     )
+
     
     option_dbh = {
         "title": {
@@ -290,42 +302,15 @@ def demand_hour_split_echarts(df, is_ebike_filter: bool = False, is_member_filte
     }
     return option_dhs
 
-def plot_h3_demand_map(df, is_origin=True, is_ebike_filter: bool = False, is_member_filter: bool = False, h3_resolution: str = "r9", time_filter: str = "All"):
-    # -----------------------------
-    # FILTER
-    # -----------------------------
-    if time_filter == "Weekday":
-        df = df[df["is_weekend"] == False]
-    elif time_filter == "Weekend":
-        df = df[df["is_weekend"] == True]
-    elif time_filter == "Rush Hour":
-        df = df[df["is_rush_hour"] == True]
-    elif time_filter == "Morning":
-        df = df[df["hour"].between(6, 11)]
-    elif time_filter == "Evening":
-        df = df[df["hour"].between(16, 20)]
+def plot_h3_demand_map(df, is_origin=True):
+    # df columns: [h3_cell, trip_count]
+    # All filtering and aggregation done upstream in BigQuery.
+    # h3_cell contains the correct resolution cells — no column switching needed.
 
-    if is_member_filter:
-        df = df[df["is_member"] == True]
-    if is_ebike_filter:
-        df = df[df["is_ebike"] == True]
-        
-    df = df.reset_index(drop=True)
+    df = df.copy().reset_index(drop=True)
     df["id"] = df.index.astype(str)
-    if h3_resolution == "r9":
-        df["geometry"] = df["origin_h3_r9"].apply(h3_to_polygon) if is_origin else df["dest_h3_r9"].apply(h3_to_polygon)
-    elif h3_resolution == "r8":
-        df["geometry"] = df["origin_h3_r8"].apply(h3_to_polygon) if is_origin else df["dest_h3_r8"].apply(h3_to_polygon)
-    elif h3_resolution == "r7":
-        df["geometry"] = df["origin_h3_r7"].apply(h3_to_polygon) if is_origin else df["dest_h3_r7"].apply(h3_to_polygon)
+    df["geometry"] = df["h3_cell"].apply(h3_to_polygon)
 
-    # ----------------------------
-    # Data Preparation
-    # ----------------------------
-    df = df.copy()
-    df = df.reset_index(drop=True)
-
-    df["id"] = df.index.astype(str)
     df = df.sort_values("trip_count", ascending=False)
     df["rank"] = range(len(df))
     df["is_top10"] = df["rank"] < 10
@@ -377,37 +362,12 @@ def plot_h3_demand_map(df, is_origin=True, is_ebike_filter: bool = False, is_mem
     # Top 10 Hotspots
     # ----------------------------
     top10 = df[df["is_top10"]]
-
-    if is_origin:
-        if h3_resolution == "r9":
-            top10_lat, top10_lon = zip(*[
-                h3.cell_to_latlng(h) for h in top10["origin_h3_r9"]
-            ])
-        elif h3_resolution == "r8":
-            top10_lat, top10_lon = zip(*[
-                h3.cell_to_latlng(h) for h in top10["origin_h3_r8"]
-            ])
-        elif h3_resolution == "r7":
-            top10_lat, top10_lon = zip(*[
-                h3.cell_to_latlng(h) for h in top10["origin_h3_r7"]
-            ])
-    else:
-        if h3_resolution == "r9":
-            top10_lat, top10_lon = zip(*[
-                h3.cell_to_latlng(h) for h in top10["dest_h3_r9"]
-            ])
-        elif h3_resolution == "r8":
-            top10_lat, top10_lon = zip(*[
-                h3.cell_to_latlng(h) for h in top10["dest_h3_r8"]
-            ])
-        elif h3_resolution == "r7":
-            top10_lat, top10_lon = zip(*[
-                h3.cell_to_latlng(h) for h in top10["dest_h3_r7"]
-            ])
+    top10_coords = [h3.cell_to_latlng(h) for h in top10["h3_cell"]]
+    top10_lat, top10_lon = zip(*top10_coords)
 
     fig.add_scattermap(
-        lat=[lat for lat, lon in zip(top10_lat, top10_lon)],
-        lon=[lon for lat, lon in zip(top10_lat, top10_lon)],
+        lat=list(top10_lat),
+        lon=list(top10_lon),
         mode="markers",
         marker=dict(size=12, color="red", opacity=0.8, symbol="star"),
         name="Top 10 Hotspots",
