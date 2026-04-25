@@ -72,8 +72,6 @@ def h3_demand_heatmap(
         data = data[data["hour"].between(6, 11)]
     elif time_filter == "Evening":
         data = data[data["hour"].between(16, 20)]
-    elif time_filter == "Holiday":
-        data = data[data["is_holiday"] == True]
 
     if is_member_filter:
         data = data[data["is_member"] == True]
@@ -186,7 +184,12 @@ def h3_demand_heatmap(
 
     return deck
 
-def demand_by_hour_echarts(df):
+def demand_by_hour_echarts(df, is_ebike_filter: bool = False, is_member_filter: bool = False):
+    if is_member_filter:
+        df = df[df["is_member"] == True]
+    if is_ebike_filter:
+        df = df[df["is_ebike"] == True]
+
     hourly = (
         df.groupby("hour")
         .size()
@@ -227,7 +230,12 @@ def demand_by_hour_echarts(df):
     }
     return option_dbh
 
-def demand_hour_split_echarts(df):
+def demand_hour_split_echarts(df, is_ebike_filter: bool = False, is_member_filter: bool = False):
+    if is_member_filter:
+        df = df[df["is_member"] == True]
+    if is_ebike_filter:
+        df = df[df["is_ebike"] == True]
+
     grouped = (
         df.groupby(["hour", "is_weekend"])
         .size()
@@ -284,10 +292,34 @@ def demand_hour_split_echarts(df):
     }
     return option_dhs
 
-def plot_h3_demand_map(df, is_origin=True):
+def plot_h3_demand_map(df, is_origin=True, is_ebike_filter: bool = False, is_member_filter: bool = False, h3_resolution: str = "r9", time_filter: str = "All"):
+    # -----------------------------
+    # FILTER
+    # -----------------------------
+    if time_filter == "Weekday":
+        df = df[df["is_weekend"] == False]
+    elif time_filter == "Weekend":
+        df = df[df["is_weekend"] == True]
+    elif time_filter == "Rush Hour":
+        df = df[df["is_rush_hour"] == True]
+    elif time_filter == "Morning":
+        df = df[df["hour"].between(6, 11)]
+    elif time_filter == "Evening":
+        df = df[df["hour"].between(16, 20)]
+
+    if is_member_filter:
+        df = df[df["is_member"] == True]
+    if is_ebike_filter:
+        df = df[df["is_ebike"] == True]
+        
     df = df.reset_index(drop=True)
     df["id"] = df.index.astype(str)
-    df["geometry"] = df["origin_h3_r9"].apply(h3_to_polygon) if is_origin else df["dest_h3_r9"].apply(h3_to_polygon)
+    if h3_resolution == "r9":
+        df["geometry"] = df["origin_h3_r9"].apply(h3_to_polygon) if is_origin else df["dest_h3_r9"].apply(h3_to_polygon)
+    elif h3_resolution == "r8":
+        df["geometry"] = df["origin_h3_r8"].apply(h3_to_polygon) if is_origin else df["dest_h3_r8"].apply(h3_to_polygon)
+    elif h3_resolution == "r7":
+        df["geometry"] = df["origin_h3_r7"].apply(h3_to_polygon) if is_origin else df["dest_h3_r7"].apply(h3_to_polygon)
 
     # ----------------------------
     # Data Preparation
@@ -349,13 +381,31 @@ def plot_h3_demand_map(df, is_origin=True):
     top10 = df[df["is_top10"]]
 
     if is_origin:
-        top10_lat, top10_lon = zip(*[
-            h3.cell_to_latlng(h) for h in top10["origin_h3_r9"]
-        ])
+        if h3_resolution == "r9":
+            top10_lat, top10_lon = zip(*[
+                h3.cell_to_latlng(h) for h in top10["origin_h3_r9"]
+            ])
+        elif h3_resolution == "r8":
+            top10_lat, top10_lon = zip(*[
+                h3.cell_to_latlng(h) for h in top10["origin_h3_r8"]
+            ])
+        elif h3_resolution == "r7":
+            top10_lat, top10_lon = zip(*[
+                h3.cell_to_latlng(h) for h in top10["origin_h3_r7"]
+            ])
     else:
-        top10_lat, top10_lon = zip(*[
-            h3.cell_to_latlng(h) for h in top10["dest_h3_r9"]
-        ])
+        if h3_resolution == "r9":
+            top10_lat, top10_lon = zip(*[
+                h3.cell_to_latlng(h) for h in top10["dest_h3_r9"]
+            ])
+        elif h3_resolution == "r8":
+            top10_lat, top10_lon = zip(*[
+                h3.cell_to_latlng(h) for h in top10["dest_h3_r8"]
+            ])
+        elif h3_resolution == "r7":
+            top10_lat, top10_lon = zip(*[
+                h3.cell_to_latlng(h) for h in top10["dest_h3_r7"]
+            ])
 
     fig.add_scattermap(
         lat=[lat for lat, lon in zip(top10_lat, top10_lon)],

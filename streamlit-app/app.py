@@ -120,11 +120,12 @@ with tab2:
         # Date Range (Month and Year)
         st.subheader("📅 Date")
         months_list = list("January February March April May June July August September October November December".split())
-        month = st.selectbox("Month", months_list, index=datetime.today().month - 2)
-        year = st.selectbox("Year", [2025, 2026], index=1)
+        month = st.selectbox("Month", months_list, index=datetime.today().month - 2, key="month_hm")
+        year = st.selectbox("Year", [2025, 2026], index=1, key="year_hm")
         time_input_hm = st.selectbox(
             "Time Filter",
-            ["All", "Weekday", "Weekend", "Rush Hour", "Morning", "Evening"]
+            ["All", "Weekday", "Weekend", "Rush Hour", "Morning", "Evening"],
+            key="time_filter_hm"
         )
 
     with col2:
@@ -135,7 +136,7 @@ with tab2:
     # ROW 2: View Mode, H3 Resolution
     col3, col4= st.columns(2)
     with col3:
-        st.subheader("📊 View Mode")
+        st.subheader("📊 View Mode (For Demand Heatmap)")
         view_mode = st.selectbox(
             "View Mode",
             ["Origin Demand", "Destination Demand", "Net Flow"]
@@ -195,8 +196,8 @@ with tab2:
 
     # Visualisation: Demand - Time Analysis
     st.header("📈 Demand - Time Analysis")
-    option_dbh = demand_by_hour_echarts(df)
-    option_dhs = demand_hour_split_echarts(df)
+    option_dbh = demand_by_hour_echarts(df, is_member_filter=is_member_hm, is_ebike_filter=is_ebike_hm)
+    option_dhs = demand_hour_split_echarts(df, is_member_filter=is_member_hm, is_ebike_filter=is_ebike_hm)
     
     col1, col2 = st.columns(2)
     with col1:
@@ -206,49 +207,56 @@ with tab2:
     
     # Visualisation - Top H3 Regions by Demand (Origin)
     st.header("🚴 Top Trip Origins/Destinations (Fine-Grained)")
-    top_ori_demand_by_h3_df = top_ori_demand_by_h3()
-    st.plotly_chart(plot_h3_demand_map(top_ori_demand_by_h3_df, is_origin=True), use_container_width=True)
+    top_ori_demand_by_h3_df = top_ori_demand_by_h3(year, month_to_num[month])
+    st.plotly_chart(plot_h3_demand_map(top_ori_demand_by_h3_df, is_origin=True, is_member_filter=is_member_hm, is_ebike_filter=is_ebike_hm, h3_resolution=h3_resolution), use_container_width=True)
 
     # Visualisation - Top H3 Regions by Demand (Destination)
-    top_dest_demand_by_h3_df = top_dest_demand_by_h3()
-    st.plotly_chart(plot_h3_demand_map(top_dest_demand_by_h3_df, is_origin=False), use_container_width=True)
+    top_dest_demand_by_h3_df = top_dest_demand_by_h3(year, month_to_num[month])
+    st.plotly_chart(plot_h3_demand_map(top_dest_demand_by_h3_df, is_origin=False, is_member_filter=is_member_hm, is_ebike_filter=is_ebike_hm, h3_resolution=h3_resolution), use_container_width=True)
 
 with tab3:
-    st.header("🌦️ Weather Analysis - Impact on Demand")
+    # ROW 1: Filters
+    col1, col2 = st.columns(2)
 
-    # Visualisation: Rain vs No Rain
+    with col1:
+        # Date Range (Month and Year)
+        st.subheader("📅 Date")
+        months_list = list("January February March April May June July August September October November December".split())
+        month_wa = st.selectbox("Month", months_list, index=datetime.today().month - 2, key="month_hm_wa")
+        year_wa = st.selectbox("Year", [2025, 2026], index=1, key="year_hm_wa")
+        time_input_hm_wa = st.selectbox(
+            "Time Filter",
+            ["All", "Weekday", "Weekend", "Rush Hour", "Morning", "Evening"],
+            key="time_filter_hm_wa"
+        )
+
+    with col2:
+        st.subheader("🚴 Profile")
+        is_ebike_hm_wa = st.toggle("Electric Bike", value=False, key="ebike_hm_wa")
+        is_member_hm_wa = st.toggle("Member", value=False, key="member_hm_wa")
+
+    # Load data (With Filters)
+    df_wa = obtain_feature_store(year_wa, month_to_num[month_wa]).copy()
+
+    # Visualisations
     st.subheader("🌧️ Rain vs No Rain")
+    st_echarts(rain_vs_no_rain_echarts(df_wa, is_member_hm_wa, is_ebike_hm_wa, time_input_hm_wa), height="400px")
 
-    option_rain = rain_vs_no_rain_echarts(df)
-
-    option_rain["renderer"] = "canvas"
-
-    st.markdown("<div style='width:100%'>", unsafe_allow_html=True)
-
-    st_echarts(
-        option_rain,
-        height="400px",
-        key="rain_pie_fixed"
-    )
-
-    st.markdown("</div>", unsafe_allow_html=True)
     col1, col2 = st.columns(2)
     with col1:
-        # Visualisation: Temperatre vs Demand
         st.subheader("🌡️ Temperature")
-        temp_vs_demand_echarts(df)
+        temp_vs_demand_echarts(df_wa, is_member_hm_wa, is_ebike_hm_wa, time_input_hm_wa)
+
     with col2:
-        # Visualisation: Wind Speed Impact
         st.subheader("💨 Wind Speed")
-        wind_impact_echarts(df)
+        wind_impact_echarts(df_wa, is_member_hm_wa, is_ebike_hm_wa, time_input_hm_wa)
 
     col3, col4 = st.columns(2)
     with col3:
-        # Visualisation: Snowfall Impact
         st.subheader("❄️ Snowfall")
-        snow_impact_echarts(df)  
+        snow_impact_echarts(df_wa, is_member_hm_wa, is_ebike_hm_wa, time_input_hm_wa)
+
     with col4:
-        # Visualisation: Rain Recency Effect
         st.subheader("⏱️ Rain Recency Effect")
-        rain_recency_echarts(df)
+        rain_recency_echarts(df_wa, is_member_hm_wa, is_ebike_hm_wa, time_input_hm_wa)
 
