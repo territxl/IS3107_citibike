@@ -138,6 +138,8 @@ def h3_demand_heatmap(
             0  
         ]
     )
+    # format count for tooltip
+    agg["count_str"] = agg["count"].apply(lambda x: f"{int(x):,}")
 
     # -----------------------------
     # NYC BOROUGH GEOJSON (REAL DATA)
@@ -185,7 +187,7 @@ def h3_demand_heatmap(
     deck = pdk.Deck(
         layers=[borough_layer, h3_layer],
         initial_view_state=view_state,
-        tooltip={"text": "Trips: {count}"}
+        tooltip={"text": "Trips: {count_str}"}
     )
 
     return deck
