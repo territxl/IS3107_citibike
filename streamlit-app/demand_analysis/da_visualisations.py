@@ -184,18 +184,14 @@ def h3_demand_heatmap(
 
     return deck
 
-def demand_by_hour_echarts(df, is_ebike_filter: bool = False, is_member_filter: bool = False):
-    if is_member_filter:
-        df = df[df["is_member"] == True]
-    if is_ebike_filter:
-        df = df[df["is_ebike"] == True]
-
+def demand_by_hour_echarts(df):
     hourly = (
         df.groupby("hour")
-        .size()
-        .reset_index(name="trip_count")
-        .sort_values("hour")
+        # sum up the (num_trips) column for each hour to get total trips per hour
+        .agg(trip_count=("num_trips", "sum"))
+        .reset_index() 
     )
+    
     option_dbh = {
         "title": {
             "text": "Trips by Hour", 
@@ -238,8 +234,10 @@ def demand_hour_split_echarts(df, is_ebike_filter: bool = False, is_member_filte
 
     grouped = (
         df.groupby(["hour", "is_weekend"])
-        .size()
-        .reset_index(name="trip_count")
+        .agg(trip_count=("num_trips", "sum"))
+        .reset_index()
+        # .size()
+        # .reset_index(name="trip_count")
     )
     weekday = grouped[grouped["is_weekend"] == False]
     weekend = grouped[grouped["is_weekend"] == True]

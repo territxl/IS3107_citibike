@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 from streamlit_echarts import st_echarts
-from bigquery_services import load_stations, top_ori_demand_by_h3, top_dest_demand_by_h3, obtain_feature_store
+from bigquery_services import load_stations, obtain_demand_by_hour_echarts, top_ori_demand_by_h3, top_dest_demand_by_h3, obtain_feature_store
 from trip_duration_predictor.feature_builder import build_feature_row
 from trip_duration_predictor.predict_trip import predict_trip_duration
 from trip_duration_predictor.map_view import render_map
@@ -156,6 +156,8 @@ with tab2:
     
     df = obtain_feature_store(year, month_to_num[month])  # Load from BigQuery instead of local CSV
     df = df.copy()
+    demand_hour_df = obtain_demand_by_hour_echarts(year, month_to_num[month])
+    demand_hour_df = demand_hour_df.copy()
 
     # Placing legend directly below the heatmap (Bottom Right)
     heatmap = h3_demand_heatmap(df, view_mode, h3_resolution, time_input_hm, is_ebike_hm, is_member_hm)
@@ -196,8 +198,8 @@ with tab2:
 
     # Visualisation: Demand - Time Analysis
     st.header("📈 Demand - Time Analysis")
-    option_dbh = demand_by_hour_echarts(df, is_member_filter=is_member_hm, is_ebike_filter=is_ebike_hm)
-    option_dhs = demand_hour_split_echarts(df, is_member_filter=is_member_hm, is_ebike_filter=is_ebike_hm)
+    option_dbh = demand_by_hour_echarts(demand_hour_df)
+    option_dhs = demand_hour_split_echarts(demand_hour_df)
     
     col1, col2 = st.columns(2)
     with col1:
