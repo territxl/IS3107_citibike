@@ -5,11 +5,12 @@
 -- DROPPED COLUMNS:
 -- started_at: extracted into temporal features
 -- rideable_type: redundant with is_ebike
--- origin/destt r9: too sparse
+-- origin/destt r9: too fine
 -- origin/dest r7: too coarse
--- od_pair_r9: too sparse
+-- od_pair_r9: too fine
 -- od_pair_r8: avoid redundant representation of origin-destination r/s
 -- apparent_temp: highly correlated with actual_temp
+-- is_raining: redundant with precipitation_mm
 
 CREATE OR REPLACE VIEW `is3107-491906.ml_datasets.trips_train_input_4` AS
 SELECT
