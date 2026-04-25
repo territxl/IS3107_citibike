@@ -99,3 +99,45 @@ def obtain_demand_by_hour_echarts(year, month):
     group by 1, 2, 3, 4
     """
     return client.query(query).to_dataframe()
+
+@st.cache_data
+def get_h3_heatmap_data(year, month, time_filter, is_member_filter=False, is_ebike_filter=False, h3_level='r7'):
+    start_date, end_date = convert_to_datetime(year, month)
+    h3_origin_col = f"origin_h3_{h3_level}"
+    h3_dest_col = f"dest_h3_{h3_level}"
+
+    predicates = [
+        f"started_at >= '{start_date}'",
+        f"started_at < '{end_date}'",
+        f"is_member = {str(is_member_filter).upper()}",
+        f"is_ebike = {str(is_ebike_filter).upper()}"
+    ]
+    if time_filter == "Weekday":
+        predicates.append("is_weekend = FALSE")
+    elif time_filter == "Weekend":
+        predicates.append("is_weekend = TRUE")
+    elif time_filter == "Rush Hour":
+        predicates.append("is_rush_hour = TRUE")
+    elif time_filter == "Morning":
+        predicates.append("hour BETWEEN 6 AND 11")
+    elif time_filter == "Evening":
+        predicates.append("hour BETWEEN 16 AND 20")
+
+    query = f"""
+    select h3_cell, sum(origin_count) as origin_count, sum(dest_count) as dest_count
+    FROM (
+        SELECT {h3_origin_col} AS h3_cell, COUNT(*) AS origin_count, 0 AS dest_count
+        FROM `is3107-491906.citibike.features`
+        WHERE {' AND '.join(predicates)}
+        GROUP BY h3_cell
+
+        UNION ALL
+        
+        SELECT {h3_dest_col} AS h3_cell, 0 AS origin_count, COUNT(*) AS dest_count
+        FROM `is3107-491906.citibike.features`
+        WHERE {' AND '.join(predicates)}
+        GROUP BY h3_cell
+    )
+    GROUP BY h3_cell
+    """
+    return client.query(query).to_dataframe()
