@@ -5,8 +5,6 @@ from streamlit_echarts import st_echarts
 from bigquery_services import load_stations, top_ori_demand_by_h3, top_dest_demand_by_h3, obtain_feature_store
 from trip_duration_predictor.feature_builder import build_feature_row
 from trip_duration_predictor.predict_trip import predict_trip_duration
-from trip_duration_predictor.weather_features import build_weather_features
-from trip_duration_predictor.dist_features import build_distance_features
 from trip_duration_predictor.map_view import render_map
 from demand_analysis.da_visualisations import h3_demand_heatmap, render_demand_heatmap_legend, demand_by_hour_echarts, demand_hour_split_echarts, plot_h3_demand_map
 from weather_analysis.wa_visualisations import rain_recency_echarts, rain_vs_no_rain_echarts, snow_impact_echarts, temp_vs_demand_echarts, wind_impact_echarts, snow_impact_echarts, rain_recency_echarts
@@ -63,7 +61,7 @@ with tab1:
     start_lat, start_lon = station_map[start_station]
     end_lat, end_lon = station_map[end_station]
     # ROW 3: Map
-    st.subheader("🗺️ Route Preview")
+    st.subheader("🗺️ Map Preview")
 
     if start_station and end_station and start_station != end_station:
         render_map(start_lat, start_lon, end_lat, end_lon, start_station, end_station)
@@ -76,15 +74,12 @@ with tab1:
         if st.button("Predict Trip Duration", disable_predict):
             duration = predict_trip_duration(feature_row) / 60  # convert seconds to minutes
 
-            weather_info = build_weather_features(start_lat, start_lon, selected_time)
-            actual_temp = weather_info["actual_temp"]
-            precipitation = weather_info["precipitation_mm"]
-            windspeed = weather_info["windspeed"]
-            snowfall = weather_info["snowfall"]
+            actual_temp = feature_row["actual_temp"]
+            precipitation = feature_row["precipitation_mm"]
+            windspeed = feature_row["windspeed"]
+            snowfall = feature_row["snowfall"]
 
-            dist_info = build_distance_features(start_lat, start_lon, end_lat, end_lon)
-            estimated_dist = dist_info["euclidean_dist_m"] / 1000  # convert to km
-
+            estimated_dist = feature_row["euclidean_dist_m"] / 1000  # convert to km
 
             st.success(f"Successful: Estimated based on route distance, time and weather conditions.")
 
@@ -101,9 +96,18 @@ with tab1:
             col2.metric("🌧️ Rainfall", f"{precipitation} mm")
             col3.metric("💨 Wind", f"{windspeed} m/s")
             col4.metric("❄️ Snowfall", f"{snowfall} mm")
+
+            st.subheader("🚲Trip Context")
+            col1, col2, col3 = st.columns(3)
+
+            col1.metric("🚦 Peak Hour", "Yes" if feature_row["is_rush_hour"] else "No")
+            col2.metric("📆 Weekend", "Yes" if feature_row["is_weekend"] else "No")
+            col3.metric("🎉 Holiday", "Yes" if feature_row["is_holiday"] else "No")
+
+
     else:
         if start_station == end_station and not st.session_state.interacted_start_end_stations:
-            st.info("Select two different stations to preview the route 🗺️")
+            st.info("Select two different stations to preview the map 🗺️")
         else:
             st.warning("Start and end stations cannot be the same")
 
