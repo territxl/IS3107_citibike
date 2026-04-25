@@ -1,7 +1,15 @@
 import streamlit as st
 from google.cloud import bigquery
+from google.oauth2 import service_account
 
-client = bigquery.Client(project="is3107-491906")
+@st.cache_resource
+def get_client():
+    credentials = service_account.Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"]
+    )
+    return bigquery.Client(credentials=credentials)
+
+client = get_client()
 
 @st.cache_data
 def load_stations():
