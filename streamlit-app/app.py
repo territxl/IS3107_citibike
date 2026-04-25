@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 from streamlit_echarts import st_echarts
-from bigquery_services import get_h3_heatmap_data, load_stations, obtain_demand_by_hour_echarts, obtain_feature_store
+from bigquery_services import get_h3_heatmap_data, get_weather_agg, load_stations, obtain_demand_by_hour_echarts, obtain_feature_store
 from trip_duration_predictor.feature_builder import build_feature_row
 from trip_duration_predictor.predict_trip import predict_trip_duration
 from trip_duration_predictor.map_view import render_map
@@ -236,28 +236,29 @@ with tab3:
         is_ebike_hm_wa = st.toggle("Electric Bike", value=False, key="ebike_hm_wa")
         is_member_hm_wa = st.toggle("Member", value=False, key="member_hm_wa")
 
-    # Load data (With Filters)
-    df_wa = obtain_feature_store(year_wa, month_to_num[month_wa]).copy()
+    # load feature store data
+    # * push filters to bq instead of client-side filtering & since all charts rely on the same filters
+    df_wa = get_weather_agg(year_wa, month_to_num[month_wa], time_input_hm_wa, is_member_hm_wa, is_ebike_hm_wa)
 
     # Visualisations
     st.subheader("🌧️ Rain vs No Rain")
-    st_echarts(rain_vs_no_rain_echarts(df_wa, is_member_hm_wa, is_ebike_hm_wa, time_input_hm_wa), height="400px")
+    st_echarts(rain_vs_no_rain_echarts(df_wa), height="400px")
 
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("🌡️ Temperature")
-        temp_vs_demand_echarts(df_wa, is_member_hm_wa, is_ebike_hm_wa, time_input_hm_wa)
+        temp_vs_demand_echarts(df_wa)
 
     with col2:
         st.subheader("💨 Wind Speed")
-        wind_impact_echarts(df_wa, is_member_hm_wa, is_ebike_hm_wa, time_input_hm_wa)
+        wind_impact_echarts(df_wa)
 
     col3, col4 = st.columns(2)
     with col3:
         st.subheader("❄️ Snowfall")
-        snow_impact_echarts(df_wa, is_member_hm_wa, is_ebike_hm_wa, time_input_hm_wa)
+        snow_impact_echarts(df_wa)
 
     with col4:
         st.subheader("⏱️ Rain Recency Effect")
-        rain_recency_echarts(df_wa, is_member_hm_wa, is_ebike_hm_wa, time_input_hm_wa)
+        rain_recency_echarts(df_wa)
 

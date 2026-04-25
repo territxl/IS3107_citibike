@@ -91,12 +91,55 @@ def get_h3_heatmap_data(year, month, time_filter, is_member_filter=False, is_ebi
         GROUP BY h3_cell
 
         UNION ALL
-        
+
         SELECT {h3_dest_col} AS h3_cell, 0 AS origin_count, COUNT(*) AS dest_count
         FROM `is3107-491906.citibike.features`
         WHERE {' AND '.join(predicates)}
         GROUP BY h3_cell
     )
     GROUP BY h3_cell
+    """
+    return client.query(query).to_dataframe()
+
+@st.cache_data
+def get_weather_agg(
+    year,
+    month,
+    time_filter,
+    is_member_filter=False,
+    is_ebike_filter=False,
+):
+    start_date, end_date = convert_to_datetime(year, month)
+
+    predicates = [
+        f"started_at >= '{start_date}'",
+        f"started_at <  '{end_date}'",
+    ]
+    if time_filter == "Weekday":
+        predicates.append("is_weekend = FALSE")
+    elif time_filter == "Weekend":
+        predicates.append("is_weekend = TRUE")
+    elif time_filter == "Rush Hour":
+        predicates.append("is_rush_hour = TRUE")
+    elif time_filter == "Morning":
+        predicates.append("hour BETWEEN 6 AND 11")
+    elif time_filter == "Evening":
+        predicates.append("hour BETWEEN 16 AND 20")
+    if is_member_filter:
+        predicates.append("is_member = TRUE")
+    if is_ebike_filter:
+        predicates.append("is_ebike = TRUE")
+
+    query = f"""
+    SELECT
+        actual_temp,
+        windspeed,
+        snowfall,
+        mins_since_rain,
+        is_raining,
+        COUNT(*) AS trip_count
+    FROM `is3107-491906.citibike.features`
+    WHERE {' AND '.join(predicates)}
+    GROUP BY actual_temp, windspeed, snowfall, mins_since_rain, is_raining
     """
     return client.query(query).to_dataframe()

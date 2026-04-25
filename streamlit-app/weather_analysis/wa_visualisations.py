@@ -5,30 +5,12 @@ import plotly.express as px
 # VISUALISATIONS
 # -----------------------------
    
-def rain_vs_no_rain_echarts(data, is_member_filter: bool = False, is_ebike_filter: bool = False, time_filter: str = "All"):
+def rain_vs_no_rain_echarts(data):
+    # data cols: [actual_temp, windspeed, snowfall, mins_since_rain, is_raining, trip_count]
 
-    if time_filter == "Weekday":
-        data = data[data["is_weekend"] == False]
-    elif time_filter == "Weekend":
-        data = data[data["is_weekend"] == True]
-    elif time_filter == "Rush Hour":
-        data = data[data["is_rush_hour"] == True]
-    elif time_filter == "Morning":
-        data = data[data["hour"].between(6, 11)]
-    elif time_filter == "Evening":
-        data = data[data["hour"].between(16, 20)]
-
-    if is_member_filter:
-        data = data[data["is_member"] == True]
-    if is_ebike_filter:
-        data = data[data["is_ebike"] == True]
-
-    rain = data["is_raining"]
-
-    rain = rain.astype(bool).tolist()
-
-    rain_count = sum(rain)
-    no_rain_count = len(rain) - rain_count 
+    counts = data.groupby("is_raining")["trip_count"].sum() # e.g. {True: x, False: y}
+    rain_count    = int(counts.get(True,  0))
+    no_rain_count = int(counts.get(False, 0))
 
     option_rain = {
         "title": {"text": "Trips Demand by Rainfall", "left": "center"},
@@ -42,104 +24,36 @@ def rain_vs_no_rain_echarts(data, is_member_filter: bool = False, is_ebike_filte
             "radius": "60%",
             "data": [
                 {"name": "No Rain", "value": no_rain_count},
-                {"name": "Rain", "value": rain_count}
+                {"name": "Rain",    "value": rain_count}
             ]
         }]
     }
     return option_rain
 
-def temp_vs_demand_echarts(data, is_member_filter: bool = False, is_ebike_filter: bool = False, time_filter: str = "All"):
-
-    if time_filter == "Weekday":
-        data = data[data["is_weekend"] == False]
-    elif time_filter == "Weekend":
-        data = data[data["is_weekend"] == True]
-    elif time_filter == "Rush Hour":
-        data = data[data["is_rush_hour"] == True]
-    elif time_filter == "Morning":
-        data = data[data["hour"].between(6, 11)]
-    elif time_filter == "Evening":
-        data = data[data["hour"].between(16, 20)]
-
-    if is_member_filter:
-        data = data[data["is_member"] == True]
-    if is_ebike_filter:
-        data = data[data["is_ebike"] == True]
-
-    fig = px.histogram(data, x="actual_temp", nbins=10, title="Temperature", color_discrete_sequence=["#2E86C1"], opacity=0.85)
+def temp_vs_demand_echarts(data):
+    fig = px.histogram(data, x="actual_temp", y="trip_count", histfunc="sum", nbins=10, title="Temperature", color_discrete_sequence=["#2E86C1"], opacity=0.85)
     fig.update_layout(hovermode="x unified")
     fig.update_xaxes(title_text="Temperature (°C)")
     fig.update_yaxes(title_text="Number of Trips")
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='content')
 
-def wind_impact_echarts(data, is_member_filter: bool = False, is_ebike_filter: bool = False, time_filter: str = "All"):
-
-    if time_filter == "Weekday":
-        data = data[data["is_weekend"] == False]
-    elif time_filter == "Weekend":
-        data = data[data["is_weekend"] == True]
-    elif time_filter == "Rush Hour":
-        data = data[data["is_rush_hour"] == True]
-    elif time_filter == "Morning":
-        data = data[data["hour"].between(6, 11)]
-    elif time_filter == "Evening":
-        data = data[data["hour"].between(16, 20)]
-
-    if is_member_filter:
-        data = data[data["is_member"] == True]
-    if is_ebike_filter:
-        data = data[data["is_ebike"] == True]
-
-    fig = px.histogram(data, x="windspeed", nbins=10, title="Wind Speed", color_discrete_sequence=["#2E86C1"], opacity=0.85)
+def wind_impact_echarts(data):
+    fig = px.histogram(data, x="windspeed", y="trip_count", histfunc="sum", nbins=10, title="Wind Speed", color_discrete_sequence=["#2E86C1"], opacity=0.85)
     fig.update_layout(hovermode="x unified")
     fig.update_xaxes(title_text="Wind Speed (m/s)")
     fig.update_yaxes(title_text="Number of Trips")
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='content')
 
-def snow_impact_echarts(data, is_member_filter: bool = False, is_ebike_filter: bool = False, time_filter: str = "All"):
-
-    if time_filter == "Weekday":
-        data = data[data["is_weekend"] == False]
-    elif time_filter == "Weekend":
-        data = data[data["is_weekend"] == True]
-    elif time_filter == "Rush Hour":
-        data = data[data["is_rush_hour"] == True]
-    elif time_filter == "Morning":
-        data = data[data["hour"].between(6, 11)]
-    elif time_filter == "Evening":
-        data = data[data["hour"].between(16, 20)]
-
-    if is_member_filter:
-        data = data[data["is_member"] == True]
-    if is_ebike_filter:
-        data = data[data["is_ebike"] == True]
-
-    fig = px.histogram(data, x="snowfall", nbins=10, title="Snowfall", color_discrete_sequence=["#2E86C1"], opacity=0.85)
+def snow_impact_echarts(data):
+    fig = px.histogram(data, x="snowfall", y="trip_count", histfunc="sum", nbins=10, title="Snowfall", color_discrete_sequence=["#2E86C1"], opacity=0.85)
     fig.update_layout(hovermode="x unified")
     fig.update_xaxes(title_text="Snowfall (mm)")
     fig.update_yaxes(title_text="Number of Trips")
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='content')
 
-def rain_recency_echarts(data, is_member_filter: bool = False, is_ebike_filter: bool = False, time_filter: str = "All"):
-
-    if time_filter == "Weekday":
-        data = data[data["is_weekend"] == False]
-    elif time_filter == "Weekend":
-        data = data[data["is_weekend"] == True]
-    elif time_filter == "Rush Hour":
-        data = data[data["is_rush_hour"] == True]
-    elif time_filter == "Morning":
-        data = data[data["hour"].between(6, 11)]
-    elif time_filter == "Evening":
-        data = data[data["hour"].between(16, 20)]
-
-    if is_member_filter:
-        data = data[data["is_member"] == True]
-    if is_ebike_filter:
-        data = data[data["is_ebike"] == True]
-
-    fig = px.histogram(data, x="mins_since_rain", nbins=10, title="Rain Recency", color_discrete_sequence=["#2E86C1"], opacity=0.85)
+def rain_recency_echarts(data):
+    fig = px.histogram(data, x="mins_since_rain", y="trip_count", histfunc="sum", nbins=10, title="Rain Recency", color_discrete_sequence=["#2E86C1"], opacity=0.85)
     fig.update_layout(hovermode="x unified")
     fig.update_xaxes(title_text="Minutes Since Rain")
     fig.update_yaxes(title_text="Number of Trips")
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='content')
