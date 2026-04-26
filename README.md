@@ -2,7 +2,7 @@
 
 ETLT pipeline built with Apache Airflow to collect, engineer, and stage data for a Citibike demand analysis project targeting XGBoost model training. Data is staged as CSV files locally before loading into BigQuery.
 
-## Team
+# Team
 
 | Name         | GitHub                                       |
 | ------------ | -------------------------------------------- |
@@ -11,6 +11,7 @@ ETLT pipeline built with Apache Airflow to collect, engineer, and stage data for
 | Nicholas Lee | [@niclee1219](https://github.com/niclee1219) |
 | Terri Tan    | [@territxl](https://github.com/territxl)     |
 
+# Airflow & Data Pipeline
 ## Data Sources
 
 | Source                                                                                                                           | DAG                  | Description                                                                               |
@@ -250,3 +251,17 @@ OD pairs are encoded with a deterministic MD5 hash so the same origin-destinatio
 - **Euclidean** (`euclidean_dist_m`): haversine great-circle distance between start and end stations
 - **Manhattan** (`manhattan_dist_m`): sum of north-south leg + east-west leg haversine distances
 - **Ratio** (`dist_ratio`): euclidean / manhattan — values near 1.0 mean the route is direct
+
+
+# Visualisations & Streamlit
+
+## Setup
+> Pre-requisites:
+> - Required packages have been installed as per the Airflow setup steps
+> - Google Application Default Credentials have been setup
+
+## Run
+
+```bash
+streamlit run streamlit-app/app.py
+```
