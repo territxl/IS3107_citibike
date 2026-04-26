@@ -35,6 +35,7 @@ with tab1:
         is_member = st.toggle("Member", value=False)
 
     selected_time = pd.Timestamp(datetime.combine(date_input, time_input))
+    selected_time = selected_time.tz_localize("America/New_York")
 
     # Load stations
     stations_df = load_stations()
