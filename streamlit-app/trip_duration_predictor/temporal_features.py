@@ -1,7 +1,7 @@
 import holidays
 
 def build_time_features(selected_time):
-    us_holidays = holidays.US()
+    us_holidays = holidays.US(state="NY")
 
     hour = selected_time.hour
     month = selected_time.month
